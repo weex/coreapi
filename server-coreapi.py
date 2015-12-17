@@ -1,6 +1,8 @@
 import os
 import json
 from subprocess import check_output
+from jsonrpc import 
+import requests
 
 from flask import Flask
 from flask import request 
@@ -68,7 +70,26 @@ def call_core(cmd):
     res = {}
     if cmd in commands:
         print("Ran %s" % (cmd,))
-        out = check_output(['bitcoin-cli', cmd], universal_newlines=False)
+        #out = check_output(['bitcoin-cli', cmd], universal_newlines=False)
+
+        url = "http://%s:%s/" % (SERVER,RPCPORT)
+        headers = {'content-type': 'application/json'}
+
+        # Example echo method
+        payload = {
+            "method": cmd,
+            #"params": ["echome!"],
+            "jsonrpc": "2.0",
+            "id": 0,
+        }
+        res = requests.post(
+            url, data=json.dumps(payload), headers=headers).json()
+
+        print(res)
+        #assert response["result"] == "echome!"
+        #assert response["jsonrpc"]
+        #assert response["id"] == 0
+
         try:
             res = json.loads(out)
         except:
