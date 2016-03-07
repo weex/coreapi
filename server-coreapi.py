@@ -1,7 +1,6 @@
 import os
 import json
 from subprocess import check_output
-from jsonrpc import 
 import requests
 
 from flask import Flask
@@ -17,34 +16,43 @@ wallet = Wallet()
 payment = Payment(app, wallet)
 
 
-commands  = ['getbestblockhash',
-             'getblockchaininfo',
-             'getblockcount',
-             'getchaintips',
-             'getdifficulty',
-             'getmempoolinfo',
-             'gettxoutsetinfo',
-             'getmininginfo'
-            ]
+commands  = {'getbestblockhash': 0,   # requiring no arguments
+             'getblockchaininfo': 0,
+             'getblockcount': 0,
+             'getchaintips': 0,
+             'getdifficulty': 0,
+             'getmempoolinfo': 0,
+             'getmininginfo': 0,
+             'getrawmempool': 0,
+             'validateaddress': 0,
+             'getnetworkhashps': 0,
+             'sendrawtransaction': 1, # requiring one argument
+             'gettxout': 1,
+             'getblock': 1,
+             'estimatefee': 1,
+             'estimatepriority': 1,
+             'decoderawtransaction': 1,
+             'decodescript': 1,
+             'getrawtransaction': 1,
+             'verifymessage': 3,      # three required args
+             }
 
 @app.route('/')
 @app.route('/info')
 @app.route('/help')
 def home():
     '''Document the API so that other services could consume automatically.'''
-    home_obj = [{"name": "basic template",
+    home_obj = [{"name": "Bitcoin Core API",
                  "service_version": "1",
                  "api_version": "1",
-                 "description": "Describe your service in a couple of sentences or less.",
+                 "description": "Provides paid access to a subset of Bitcoin Core RPC commands.",
                  "endpoints" : [
-                                {"route": "/example",
-                                 "args": [{"name": "first_arg",
-                                           "description": "Describe the first argument to this endpoint."},
-                                           ],  
+                                {"route": "/api/<method>",
+                                    "args": None,
                                  "per-req": PRICE,
-                                 "description": "Briefly describe this endpoint.",
-                                 "returns": [{"name": "first_return",
-                                              "description": "Describe the first piece of data your service returns."},
+                                 "description": "Accepts any of the following methods: %s" % ', '.join(commands),
+                                 "returns": [{"name": "various",
+                                              "description": "JSON output of each method."},
                                             ],
                                 },
                                 {"route": "/info",
@@ -63,16 +71,16 @@ def home():
                        }
            )
 
-@app.route('/core/<cmd>')
+@app.route('/api/<cmd>')
 #@payment.required(PRICE)
 def call_core(cmd):
     # do stuff
     res = {}
     if cmd in commands:
-        print("Ran %s" % (cmd,))
+        #print("Ran %s" % (cmd,))
         #out = check_output(['bitcoin-cli', cmd], universal_newlines=False)
 
-        url = "http://%s:%s/" % (SERVER,RPCPORT)
+        url = "http://%s:%s@%s:%s/" % (RPCUSER, RPCPASS, SERVER, RPCPORT)
         headers = {'content-type': 'application/json'}
 
         # Example echo method
@@ -82,10 +90,10 @@ def call_core(cmd):
             "jsonrpc": "2.0",
             "id": 0,
         }
-        res = requests.post(
+        out = requests.post(
             url, data=json.dumps(payload), headers=headers).json()
 
-        print(res)
+        #print(out)
         #assert response["result"] == "echome!"
         #assert response["jsonrpc"]
         #assert response["id"] == 0
