@@ -1,20 +1,18 @@
-import os
-import json
-from subprocess import check_output
-import requests
-
 from flask import Flask
 from flask import request 
 
 from two1.lib.wallet import Wallet
 from two1.lib.bitserv.flask import Payment
 
+import os
+import json
+import requests
+
 from settings import *
 
 app = Flask(__name__)
 wallet = Wallet()
 payment = Payment(app, wallet)
-
 
 commands  = {'getbestblockhash': 0,   # requiring no arguments
              'getblockchaininfo': 0,
@@ -71,48 +69,39 @@ def home():
                        }
            )
 
+
 @app.route('/api/<cmd>')
 #@payment.required(PRICE)
 def call_core(cmd):
-    # do stuff
     res = {}
     if cmd in commands:
-        #print("Ran %s" % (cmd,))
-        #out = check_output(['bitcoin-cli', cmd], universal_newlines=False)
-
-        url = "http://%s:%s@%s:%s/" % (RPCUSER, RPCPASS, SERVER, RPCPORT)
-        headers = {'content-type': 'application/json'}
-
-        # Example echo method
-        payload = {
-            "method": cmd,
-            #"params": ["echome!"],
-            "jsonrpc": "2.0",
-            "id": 0,
-        }
-        out = requests.post(
-            url, data=json.dumps(payload), headers=headers).json()
-
-        #print(out)
-        #assert response["result"] == "echome!"
-        #assert response["jsonrpc"]
-        #assert response["id"] == 0
-
-        try:
-            res = json.loads(out)
-        except:
-            res = {"output": out}
-        res['result'] = 'success'
+        res = json_rpc(cmd)
     else:
         res = {'result': 'error',
-                'message': 'Invalid command. In other words, nope.'}
-
+               'message': 'Invalid command'}
     body = json.dumps(res)
-
     return (body, 200, {'Content-length': len(body),
                         'Content-type': 'application/json',
                        }
            )
+
+
+def json_rpc(command):
+    url = "http://%s:%s@%s:%s/" % (RPCUSER, RPCPASS, SERVER, RPCPORT)
+    headers = {'content-type': 'application/json'}
+    payload = {
+        "method": cmd,
+        "jsonrpc": "2.0",
+        "id": 0}
+    out = requests.post(url, data=json.dumps(payload), headers=headers).json()
+
+    try:
+        res = json.loads(out)
+    except:
+        res = {"output": out}
+    res['result'] = 'success'
+    return res
+
 
 if __name__ == '__main__':
     if DEBUG:
