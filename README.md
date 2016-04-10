@@ -1,3 +1,3 @@
 ## CoreAPI 
 
-Endpoint to provide endpoints for Bitcoin Core RPC calls.
+Flaksk server to provide HTTP endpoints for Bitcoin Core RPC calls.
